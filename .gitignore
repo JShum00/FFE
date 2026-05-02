@@ -27,6 +27,7 @@ imgui.ini
 # Generated / runtime
 *.resources
 *.crc
+/log.log
 
 # Doom assets (CRITICAL)
 base/
