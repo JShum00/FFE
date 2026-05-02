@@ -3865,34 +3865,57 @@ bool idGameLocal::SpawnEntityDef( const idDict& args, idEntity** ent, bool setDe
 	idStr		error;
 	const char*  name;
 
+
+	// The caller may pass an output pointer when it needs direct access to the
+	// spawned C++ entity. Clear it up front so every failure path leaves a
+	// predictable result.
 	if( ent )
 	{
 		*ent = NULL;
 	}
 
+	// Copy the caller-provided spawn arguments into gameLocal.spawnArgs. Spawn
+	// methods and script code read from this shared dictionary while the object
+	// is being constructed.
 	spawnArgs = args;
 
+	// Build a small context suffix for warnings. Entity names are optional, but
+	// when present they make bad classname/spawnclass/spawnfunc data much easier
+	// to trace back to a map entity.
 	if( spawnArgs.GetString( "name", "", &name ) )
 	{
 		sprintf( error, " on '%s'", name );
 	}
 
+	// Every spawnable entity definition is keyed by classname. The classname is
+	// first resolved to an entityDef declaration, then that declaration supplies
+	// defaults and the actual C++ or script spawn target.
 	spawnArgs.GetString( "classname", NULL, &classname );
 
 	const idDeclEntityDef* def = FindEntityDef( classname, false );
 
+	// Unknown classnames are not fatal here. The caller gets false and the map
+	// load can decide how to proceed after emitting a useful warning.
 	if( !def )
 	{
 		Warning( "Unknown classname '%s'%s.", classname, error.c_str() );
 		return false;
 	}
 
+	// Merge declaration defaults into the instance dictionary before spawning.
+	// Explicit map/spawn args stay authoritative; missing keys are filled from
+	// the entityDef.
 	spawnArgs.SetDefaults( &def->dict );
 
+	// Time-group behavior is data-driven by the "slowmo" spawn arg. If the def
+	// did not specify it, most entities default to slow motion, while player and
+	// weapon-critical entities stay on the fast timeline for responsive control.
 	if( !spawnArgs.FindKey( "slowmo" ) )
 	{
 		bool slowmo = true;
 
+		// fastEntityList is a NULL-terminated table of entityDef names that
+		// should not be slowed down when slow-motion gameplay is active.
 		for( int i = 0; fastEntityList[i]; i++ )
 		{
 			if( !idStr::Cmp( classname, fastEntityList[i] ) )
@@ -3902,6 +3925,9 @@ bool idGameLocal::SpawnEntityDef( const idDict& args, idEntity** ent, bool setDe
 			}
 		}
 
+		// Only write the arg when opting out of the default. Leaving normal
+		// slowmo entities without an explicit key preserves existing default
+		// behavior and keeps spawned dictionaries smaller.
 		if( !slowmo )
 		{
 			spawnArgs.SetBool( "slowmo", slowmo );
@@ -3913,6 +3939,9 @@ bool idGameLocal::SpawnEntityDef( const idDict& args, idEntity** ent, bool setDe
 	if( spawn )
 	{
 
+		// "spawnclass" names a registered idClass type. This is the usual path
+		// for native C++ entities such as players, triggers, projectiles, movers,
+		// lights, and items.
 		cls = idClass::GetClass( spawn );
 		if( !cls )
 		{
@@ -3920,6 +3949,8 @@ bool idGameLocal::SpawnEntityDef( const idDict& args, idEntity** ent, bool setDe
 			return false;
 		}
 
+		// Construct the object through the runtime type system, then dispatch
+		// its Spawn method. CallSpawn reads gameLocal.spawnArgs populated above.
 		obj = cls->CreateInstance();
 		if( !obj )
 		{
@@ -3929,6 +3960,8 @@ bool idGameLocal::SpawnEntityDef( const idDict& args, idEntity** ent, bool setDe
 
 		obj->CallSpawn();
 
+		// Some registered classes may not derive from idEntity. Only return an
+		// entity pointer to callers when the object is actually an entity.
 		if( ent && obj->IsType( idEntity::Type ) )
 		{
 			*ent = static_cast<idEntity*>( obj );
@@ -3941,6 +3974,8 @@ bool idGameLocal::SpawnEntityDef( const idDict& args, idEntity** ent, bool setDe
 	spawnArgs.GetString( "spawnfunc", NULL, &spawn );
 	if( spawn )
 	{
+		// "spawnfunc" is the script-only path. The function is looked up in the
+		// loaded script program and started on a new thread immediately.
 		const function_t* func = program.FindFunction( spawn );
 		if( !func )
 		{
@@ -3952,6 +3987,8 @@ bool idGameLocal::SpawnEntityDef( const idDict& args, idEntity** ent, bool setDe
 		return true;
 	}
 
+	// A resolved entityDef must choose exactly one spawn mechanism. Reaching this
+	// point means the declaration exists but cannot produce any runtime object.
 	Warning( "%s doesn't include a spawnfunc or spawnclass%s.", classname, error.c_str() );
 	return false;
 }

@@ -65,7 +65,7 @@ void idMenuScreen_Shell_Credits::SetupCreditList()
 
 
 	creditList.Clear();
-	creditList.Append( creditInfo_t( 3,	"RBDOOM 3 BFG EDITION" ) );
+	creditList.Append( creditInfo_t( 3,	"FRONTLINE FORGE ENGINE" ) );
 	creditList.Append( creditInfo_t() );
 	creditList.Append( creditInfo_t( 1,	"Project Owner"	) );
 	creditList.Append( creditInfo_t( 0,	"Robert Beckebans - Engine upgrades, Linux, TrenchBroom" ) );
@@ -91,7 +91,7 @@ void idMenuScreen_Shell_Credits::SetupCreditList()
 	creditList.Append( creditInfo_t() );
 	creditList.Append( creditInfo_t() );
 	creditList.Append( creditInfo_t() );
-	creditList.Append( creditInfo_t( 3,	"DOOM 3 BFG EDITION"	) );
+	creditList.Append( creditInfo_t( 3,	"FRONTLINE FORGE ENGINE"	) );
 	creditList.Append( creditInfo_t() );
 	creditList.Append( creditInfo_t( 2,	"DEVELOPMENT TEAM"	) );
 	creditList.Append( creditInfo_t() );
@@ -171,7 +171,7 @@ void idMenuScreen_Shell_Credits::SetupCreditList()
 	creditList.Append( creditInfo_t( 0,	"Michael Musick"	) );
 	creditList.Append( creditInfo_t( 0,	"Alex Brandt"	) );
 	creditList.Append( creditInfo_t() );
-	creditList.Append( creditInfo_t( 3,	"DOOM 3 DEVELOPED BY"	) );
+	creditList.Append( creditInfo_t( 3,	"FRONTLINE FORGE ENGINE DEVELOPED BY"	) );
 	creditList.Append( creditInfo_t() );
 	creditList.Append( creditInfo_t( 2,	"id Software"	) );
 	creditList.Append( creditInfo_t() );
@@ -226,7 +226,7 @@ void idMenuScreen_Shell_Credits::SetupCreditList()
 	creditList.Append( creditInfo_t() );
 	creditList.Append( creditInfo_t( 2,	"3rd PARTY"	) );
 	creditList.Append( creditInfo_t() );
-	creditList.Append( creditInfo_t( 1,	"DOOM 3: Ressurection of Evil Developed by"	) );
+	creditList.Append( creditInfo_t( 1,	"Frontline Forge Engine: Ressurection of Evil Developed by"	) );
 	creditList.Append( creditInfo_t( 0,	"Nerve Software"	) );
 	creditList.Append( creditInfo_t() );
 	creditList.Append( creditInfo_t( 1,	"Additional Sound Design"	) );
@@ -234,10 +234,10 @@ void idMenuScreen_Shell_Credits::SetupCreditList()
 	creditList.Append( creditInfo_t( 0,	"Danetracks, Inc."	) );
 	creditList.Append( creditInfo_t( 0,	"Defacto Sound"	) );
 	creditList.Append( creditInfo_t() );
-	creditList.Append( creditInfo_t( 1,	"Theme for DOOM 3 Produced by"	) );
+	creditList.Append( creditInfo_t( 1,	"Theme for Frontline Forge Engine Produced by"	) );
 	creditList.Append( creditInfo_t( 0,	"Chris Vrenna"	) );
 	creditList.Append( creditInfo_t() );
-	creditList.Append( creditInfo_t( 1,	"Theme for DOOM 3 Composed by"	) );
+	creditList.Append( creditInfo_t( 1,	"Theme for Frontline Forge Engine Composed by"	) );
 	creditList.Append( creditInfo_t( 0,	"Clint Walsh"	) );
 	creditList.Append( creditInfo_t() );
 	creditList.Append( creditInfo_t( 1,	"Additional Story and Dialog"	) );

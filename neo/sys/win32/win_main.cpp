@@ -62,8 +62,8 @@ idCVar Win32Vars_t::win_timerUpdate( "win_timerUpdate", "0", CVAR_SYSTEM | CVAR_
 idCVar Win32Vars_t::win_allowMultipleInstances( "win_allowMultipleInstances", "0", CVAR_SYSTEM | CVAR_BOOL, "allow multiple instances running concurrently" );
 
 // RB
-idCVar Win32Vars_t::sys_useSteamPath( "sys_useSteamPath", "0", CVAR_SYSTEM | CVAR_BOOL | CVAR_ARCHIVE, "Look for Steam Doom 3 BFG path instead of local installation" );
-idCVar Win32Vars_t::sys_useGOGPath( "sys_useGOGPath", "0", CVAR_SYSTEM | CVAR_BOOL | CVAR_ARCHIVE, "Look for GOG Doom 3 BFG path instead of local installation" );
+idCVar Win32Vars_t::sys_useSteamPath( "sys_useSteamPath", "0", CVAR_SYSTEM | CVAR_BOOL | CVAR_ARCHIVE, "Look for Steam installation path instead of local installation" );
+idCVar Win32Vars_t::sys_useGOGPath( "sys_useGOGPath", "0", CVAR_SYSTEM | CVAR_BOOL | CVAR_ARCHIVE, "Look for GOG installation path instead of local installation" );
 
 Win32Vars_t	win32;
 
@@ -2036,15 +2036,15 @@ void EmailCrashReport( LPSTR messageText )
 			MapiRecipDesc toProgrammers =
 			{
 				0,										// ulReserved
-				MAPI_TO,							// ulRecipClass
-				"DOOM 3 Crash",						// lpszName
-				"SMTP:programmers@idsoftware.com",	// lpszAddress
-				0,									// ulEIDSize
-				0									// lpEntry
+				MAPI_TO,								// ulRecipClass
+				"Frontline Forge Engine Crash",			// lpszName
+				"SMTP:programmers@idsoftware.com",		// lpszAddress
+				0,										// ulEIDSize
+				0										// lpEntry
 			};
 
 			MapiMessage		message = {};
-			message.lpszSubject = "DOOM 3 Fatal Error";
+			message.lpszSubject = "Frontline Forge Engine Fatal Error";
 			message.lpszNoteText = messageText;
 			message.nRecipCount = 1;
 			message.lpRecips = &toProgrammers;
@@ -2088,7 +2088,7 @@ EXCEPTION_DISPOSITION __cdecl _except_handler( struct _EXCEPTION_RECORD* Excepti
 
 
 	sprintf( msg,
-			 "Please describe what you were doing when DOOM 3 crashed!\n"
+			 "Please describe what you were doing when Frontline Forge Engine crashed!\n"
 			 "If this text did not pop into your email client please copy and email it to programmers@idsoftware.com\n"
 			 "\n"
 			 "-= FATAL EXCEPTION =-\n"

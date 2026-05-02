@@ -1,46 +1,45 @@
+# Build output
 build*
+neo/bin/
+neo/cmake-build-*/
+
+# IDE / editor junk
 eclipse*
 xcode*
-neo/ipch
+neo/.idea/
+neo/.vscode/
+neo/.kdev4
+neo/neo.kdev4
+.vscode/
+
+# Temporary files
 *~
 *.gch
+.DS_Store
+imgui.ini
+
+# Binaries / archives
 *.dll
 *.exe
 *.7z
 *.zip
-*.pk4
+
+# Generated / runtime
 *.resources
 *.crc
-.DS_Store
-imgui.ini
 
-base/autoexec.cfg
-base/classicmusic/
-base/joy_360_0.cfg
-base/joy_360_1.cfg
-base/joy_lefty.cfg
-base/joy_righty.cfg
-base/maps/
-base/sound/
-base/strings/
-base/video/
-base/wads/
-base/renderprogs2/
-base/generated/
-base/env/
-base/screenshots/
-base/_tb/*.obj
-base/_tb/*.mtl
+# Doom assets (CRITICAL)
+base/
+base/default.cfg
+DOOM 3 BFG Edition/
+*.pk4
 
+# Tools (optional, depending on your use)
+# /tools/
+
+# Tags / indexing
 GPATH
 GRTAGS
 GSYMS
 GTAGS
 HTML/
-neo/.kdev4
-neo/neo.kdev4
-neo/.idea/
-neo/.vscode/
-neo/cmake-build-*/
-neo/bin/
-/tools/
