@@ -46,6 +46,7 @@ idCVar com_disableAllSaves( "com_disableAllSaves", "0", CVAR_SYSTEM | CVAR_BOOL,
 extern idCVar sys_lang;
 
 extern idCVar g_demoMode;
+extern idCVar ffe_minimalApp;
 
 // This is for the dirty hack to get a dialog to show up before we capture the screen for autorender.
 const int NumScreenUpdatesToShowDialog = 25;
@@ -412,6 +413,15 @@ void idCommonLocal::ExecuteMapChange()
 
 	common->Printf( "--------- Execute Map Change ---------\n" );
 	common->Printf( "Map: %s\n", matchParameters.mapName.c_str() );
+
+	if( ffe_minimalApp.GetBool() )
+	{
+		common->Printf( "FFE: Minimal app mode active, skipping map and game initialization\n" );
+		UnloadMap();
+		insideExecuteMapChange = false;
+		session->QuitMatchToTitle();
+		return;
+	}
 
 	// ensure that r_znear is reset to the default value
 	// this fixes issues with the projection matrix getting messed up when switching maps or loading a saved game

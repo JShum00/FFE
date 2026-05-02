@@ -726,6 +726,7 @@ public:
 	}
 
 	bool					CanGive( const char* statname, const char* value );
+	bool					WeaponAvailable( const char* name );
 
 	void					StopHelltime( bool quick = true );
 	void					PlayHelltimeStopSound();
@@ -964,8 +965,6 @@ private:
 	// mp
 	void					Respawn_Shared();
 
-	bool					WeaponAvailable( const char* name );
-
 	void					UseVehicle();
 
 	void					Event_GetButtons();
@@ -1037,4 +1036,3 @@ ID_INLINE void idPlayer::SetSelfSmooth( bool b )
 extern idCVar g_infiniteAmmo;
 
 #endif /* !__GAME_PLAYER_H__ */
-

@@ -216,6 +216,7 @@ extern idCVar	g_testParticle;
 extern idCVar	g_testParticleName;
 
 extern idCVar	g_testPostProcess;
+extern idCVar	ffe_minimalApp;
 
 extern idCVar	g_testModelRotate;
 extern idCVar	g_testModelAnimate;

@@ -77,6 +77,7 @@ idCVar timescale( "timescale", "1", CVAR_SYSTEM | CVAR_FLOAT, "Number of game fr
 
 extern idCVar in_useJoystick;
 extern idCVar in_joystickRumble;
+extern idCVar ffe_minimalApp;
 
 /*
 ===============
@@ -266,6 +267,16 @@ void idCommonLocal::Draw()
 	if( com_sleepDraw.GetInteger() )
 	{
 		Sys_Sleep( com_sleepDraw.GetInteger() );
+	}
+
+	if( ffe_minimalApp.GetBool() )
+	{
+		renderSystem->SetColor4( 0, 0, 0, 1 );
+		renderSystem->DrawStretchPic( 0, 0, renderSystem->GetVirtualWidth(), renderSystem->GetVirtualHeight(), 0, 0, 1, 1, whiteMaterial );
+		renderSystem->DrawBigStringExt( 40, 60, "Frontline Forge Engine", colorWhite, true );
+		renderSystem->DrawSmallStringExt( 40, 92, "Minimal App Mode", colorWhite, true );
+		renderSystem->DrawSmallStringExt( 40, renderSystem->GetVirtualHeight() - 28, "Press ESC to quit", colorWhite, true );
+		return;
 	}
 
 	if( loadPacifierBinarizeActive || LoadPacifierRunning() )
@@ -1066,4 +1077,3 @@ void idCommonLocal::RunDoomClassicFrame()
 
 #endif
 // RB end
-

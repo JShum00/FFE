@@ -802,7 +802,7 @@ idSWFScriptVar idMenuScreen_Shell_SystemOptions::idMenuDataSource_SystemSettings
 			static const int numValues = 10;
 			static const char* values[numValues] =
 			{
-				"Doom 3",
+				"FFE",
 				"2-bit",
 				"2-bit Hi",
 				"Commodore 64",
@@ -1068,4 +1068,3 @@ void idMenuWidget_SystemOptionsList::Scroll( const int scrollAmount, const bool 
 	//idLib::Printf( "scroll = %i, index = %i -> %i, offset = %i -> %i, focus = %i -> %i\n", scrollAmount, oldViewIndex, newIndex, oldViewOffset, newOffset, oldFocusIndex, GetFocusIndex() );
 }
 // RB end
-

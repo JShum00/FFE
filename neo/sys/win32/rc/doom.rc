@@ -81,12 +81,12 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName", "id Software LLC, a ZeniMax Media company"
-            VALUE "FileDescription", "DOOM 3: BFG Edition"
+            VALUE "FileDescription", "Frontline Forge Engine"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "Doom3BFG"
             VALUE "LegalCopyright", "© 1993-2012 id Software LLC, a ZeniMax Media company"
             VALUE "OriginalFilename", "Doom3BFG"
-            VALUE "ProductName", "DOOM® 3: BFG Edition™"
+            VALUE "ProductName", "Frontline Forge Engine"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END

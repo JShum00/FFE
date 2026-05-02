@@ -447,6 +447,10 @@ public:
 	void					LocalMapRestart();
 	void					MapRestart();
 	static void				MapRestart_f( const idCmdArgs& args );
+	// Thin FFE integration seam: reset, per-frame tick, and explicit script trigger.
+	void					FFE_ResetStartupState();
+	void					FFE_RunStartupFrame();
+	void					FFE_TriggerStartupEncounter();
 
 	idMapFile* 				GetLevelMap();
 	const char* 			GetMapName() const;

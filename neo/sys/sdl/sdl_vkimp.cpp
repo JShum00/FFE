@@ -100,6 +100,8 @@ bool DeviceManager::CreateWindowDeviceAndSwapChain( const glimpParms_t& parms, c
 		return false;
 	}
 
+	SDL_SetWindowTitle( window, "Frontline Forge Engine" );
+
 	// RB
 	m_DeviceParams.backBufferWidth = parms.width;
 	m_DeviceParams.backBufferHeight = parms.height;

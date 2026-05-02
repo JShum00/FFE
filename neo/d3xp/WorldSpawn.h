@@ -50,6 +50,7 @@ public:
 	void			Restore( idRestoreGame* savefile );
 
 	void			Event_PlayBackgroundMusic();
+	void			Event_FFE_TriggerStartupEncounter();
 
 private:
 	void			SetMusicTrack();
