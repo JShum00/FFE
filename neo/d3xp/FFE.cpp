@@ -25,13 +25,77 @@ idCVar ffe_minimalApp(
 namespace
 {
 
+enum ffeStartupDiagState_t
+{
+	FFE_STARTUP_DIAG_NONE,
+	FFE_STARTUP_DIAG_WAITING_FOR_CINEMATIC_CLEAR,
+	FFE_STARTUP_DIAG_WAITING_FOR_POST_CINEMATIC_DELAY,
+	FFE_STARTUP_DIAG_WAITING_FOR_STARTUP_DELAY,
+	FFE_STARTUP_DIAG_READY_FOR_AUTO_TRIGGER
+};
+
+ffeStartupDiagState_t g_ffeStartupDiagState = FFE_STARTUP_DIAG_NONE;
+
+void FFE_Log( idGameLocal& gameLocal, const char* fmt, ... )
+{
+	char text[1024];
+	va_list argptr;
+	va_start( argptr, fmt );
+	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+	va_end( argptr );
+	gameLocal.Printf( "FFE: %s\n", text );
+}
+
+void FFE_Warn( idGameLocal& gameLocal, const char* fmt, ... )
+{
+	char text[1024];
+	va_list argptr;
+	va_start( argptr, fmt );
+	idStr::vsnPrintf( text, sizeof( text ), fmt, argptr );
+	va_end( argptr );
+	gameLocal.Warning( "FFE: %s\n", text );
+}
+
+void FFE_SetStartupDiagState( idGameLocal& gameLocal, ffeStartupDiagState_t state, int delayMs = 0 )
+{
+	if( g_ffeStartupDiagState == state )
+	{
+		return;
+	}
+
+	g_ffeStartupDiagState = state;
+
+	switch( state )
+	{
+		case FFE_STARTUP_DIAG_WAITING_FOR_CINEMATIC_CLEAR:
+			FFE_Log( gameLocal, "Startup encounter waiting for cinematic/camera state to clear at time=%d", gameLocal.time );
+			break;
+
+		case FFE_STARTUP_DIAG_WAITING_FOR_POST_CINEMATIC_DELAY:
+			FFE_Log( gameLocal, "Cinematic gate cleared; waiting %d ms before auto encounter", delayMs );
+			break;
+
+		case FFE_STARTUP_DIAG_WAITING_FOR_STARTUP_DELAY:
+			FFE_Log( gameLocal, "No cinematic gate seen; waiting %d ms after startup before auto encounter", delayMs );
+			break;
+
+		case FFE_STARTUP_DIAG_READY_FOR_AUTO_TRIGGER:
+			FFE_Log( gameLocal, "Startup encounter ready for automatic trigger at time=%d", gameLocal.time );
+			break;
+
+		case FFE_STARTUP_DIAG_NONE:
+		default:
+			break;
+	}
+}
+
 bool FFE_EnsureStartupWeapon( idGameLocal& gameLocal, idPlayer& player )
 {
 	if( gameLocal.world != NULL && gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) )
 	{
 		gameLocal.world->spawnArgs.SetBool( "no_Weapons", false );
 		player.ProcessEvent( &EV_Player_EnableWeapon );
-		gameLocal.Printf( "FFE: Cleared no_Weapons gate for startup loadout\n" );
+		FFE_Log( gameLocal, "Cleared no_Weapons gate for startup loadout" );
 	}
 
 	const bool gaveWeapon = player.Give( "weapon", "weapon_machinegun", ITEM_GIVE_FEEDBACK | ITEM_GIVE_UPDATE_STATE );
@@ -46,15 +110,15 @@ bool FFE_EnsureStartupWeapon( idGameLocal& gameLocal, idPlayer& player )
 
 	if( hasMachinegun )
 	{
-		gameLocal.Printf( "FFE: Startup weapon grant weapon=%d ammo=%d slot=%d no_Weapons=%d\n",
-						  gaveWeapon, gaveAmmo, machinegunSlot,
-						  gameLocal.world != NULL ? gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) : 0 );
+		FFE_Log( gameLocal, "Startup weapon grant weapon=%d ammo=%d slot=%d no_Weapons=%d",
+				 gaveWeapon, gaveAmmo, machinegunSlot,
+				 gameLocal.world != NULL ? gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) : 0 );
 	}
 	else
 	{
-		gameLocal.Warning( "FFE: Failed to grant machinegun weapon=%d ammo=%d slot=%d no_Weapons=%d\n",
-						   gaveWeapon, gaveAmmo, machinegunSlot,
-						   gameLocal.world != NULL ? gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) : 0 );
+		FFE_Warn( gameLocal, "Failed to grant machinegun weapon=%d ammo=%d slot=%d no_Weapons=%d",
+				  gaveWeapon, gaveAmmo, machinegunSlot,
+				  gameLocal.world != NULL ? gameLocal.world->spawnArgs.GetBool( "no_Weapons" ) : 0 );
 	}
 
 	gameLocal.ffeWeaponGranted = true;
@@ -102,13 +166,13 @@ bool FFE_SpawnStartupMonster( idGameLocal& gameLocal, idPlayer& player, const ch
 	const bool spawned = gameLocal.SpawnEntityDef( args, &ent ) && ent != NULL;
 	if( spawned )
 	{
-		gameLocal.Printf( "FFE: Spawned test monster at (%.1f %.1f %.1f) in front of player time=%d sawCinematic=%d source=%s\n",
-						  spawnOrigin.x, spawnOrigin.y, spawnOrigin.z, gameLocal.time, gameLocal.ffeSawCinematic, sourceTag );
+		FFE_Log( gameLocal, "Spawned test monster at (%.1f %.1f %.1f) in front of player time=%d sawCinematic=%d source=%s",
+				 spawnOrigin.x, spawnOrigin.y, spawnOrigin.z, gameLocal.time, gameLocal.ffeSawCinematic, sourceTag );
 	}
 	else
 	{
-		gameLocal.Warning( "FFE: Failed to spawn test monster in front of player time=%d sawCinematic=%d source=%s\n",
-						   gameLocal.time, gameLocal.ffeSawCinematic, sourceTag );
+		FFE_Warn( gameLocal, "Failed to spawn test monster in front of player time=%d sawCinematic=%d source=%s",
+				  gameLocal.time, gameLocal.ffeSawCinematic, sourceTag );
 	}
 
 	gameLocal.ffeMonsterSpawned = true;
@@ -128,6 +192,7 @@ void idGameLocal::FFE_ResetStartupState()
 	ffeWeaponGranted = false;
 	ffeSawCinematic = false;
 	ffeClearSinceTime = -1;
+	g_ffeStartupDiagState = FFE_STARTUP_DIAG_NONE;
 }
 
 void idGameLocal::FFE_RunStartupFrame( idPlayer* player )
@@ -141,12 +206,16 @@ void idGameLocal::FFE_RunStartupFrame( idPlayer* player )
 	{
 		ffeSawCinematic = true;
 		ffeClearSinceTime = -1;
+		FFE_SetStartupDiagState( *this, FFE_STARTUP_DIAG_WAITING_FOR_CINEMATIC_CLEAR );
 		return;
 	}
 
 	if( ffeClearSinceTime < 0 )
 	{
 		ffeClearSinceTime = time;
+		FFE_SetStartupDiagState( *this,
+								 ffeSawCinematic ? FFE_STARTUP_DIAG_WAITING_FOR_POST_CINEMATIC_DELAY : FFE_STARTUP_DIAG_WAITING_FOR_STARTUP_DELAY,
+								 ffeSawCinematic ? SEC2MS( 1.0f ) : SEC2MS( 2.0f ) );
 	}
 
 	if( !ffeWeaponGranted )
@@ -157,6 +226,7 @@ void idGameLocal::FFE_RunStartupFrame( idPlayer* player )
 	const bool encounterReady = ffeSawCinematic ? ( time - ffeClearSinceTime ) >= SEC2MS( 1.0f ) : time >= SEC2MS( 2.0f );
 	if( !ffeMonsterSpawned && encounterReady )
 	{
+		FFE_SetStartupDiagState( *this, FFE_STARTUP_DIAG_READY_FOR_AUTO_TRIGGER );
 		FFE_SpawnStartupMonster( *this, *player, "auto" );
 	}
 }
@@ -166,15 +236,17 @@ void idGameLocal::FFE_TriggerStartupEncounter()
 	idPlayer* player = GetLocalPlayer();
 	if( player == NULL )
 	{
-		Warning( "FFE: Cannot trigger startup encounter without a local player\n" );
+		FFE_Warn( *this, "Cannot trigger startup encounter without a local player" );
 		return;
 	}
 
 	if( FFE_IsCinematicGateActive( *this, *player ) )
 	{
-		Warning( "FFE: Startup encounter trigger ignored while cinematic state is active\n" );
+		FFE_Warn( *this, "Startup encounter trigger ignored while cinematic state is active" );
 		return;
 	}
+
+	FFE_Log( *this, "Received script startup encounter trigger at time=%d", time );
 
 	if( !ffeWeaponGranted )
 	{

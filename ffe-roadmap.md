@@ -133,11 +133,11 @@ Checklist:
   remains the default branch workflow.
 - [x] Verify the primary build and launch flow from the current repository docs
   and correct any drift.
-- [ ] Consolidate current FFE startup diagnostics so logs are useful without
+- [x] Consolidate current FFE startup diagnostics so logs are useful without
   frame-spam or scattered one-off prints.
-- [ ] Document the current FFE integration points and code ownership boundary
+- [x] Document the current FFE integration points and code ownership boundary
   between framework, game, tools, and docs.
-- [ ] Audit the existing engine-cleanup changes for temporary hacks that should
+- [x] Audit the existing engine-cleanup changes for temporary hacks that should
   be either documented, renamed, or removed before deeper refactors.
 
 Deliverables:

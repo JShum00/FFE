@@ -150,3 +150,21 @@ For new gameplay work, start by identifying whether the behavior is:
   physics class attached by the entity.
 - Save/network behavior: inspect the entity's `Save` / `Restore` and snapshot
   methods, then check `Game_network.cpp` and `gamesys/SaveGame.*`.
+
+## FFE Boundary Summary
+
+For the current fork state, use this boundary map:
+
+- `neo/framework/`: engine/app lifecycle, global runtime flow, and
+  non-game-specific infrastructure
+- `neo/d3xp/`: gameplay runtime and the current home of FFE-specific behavior
+- repo-root scripts plus `tools/` and `neo/tools/`: build, launch, exporters,
+  and content-support utilities
+- repo-root docs plus `docs/docs/`: roadmap, integration notes, and technical
+  references
+
+Near-term FFE rule:
+
+- prefer `neo/d3xp/FFE.cpp` for FFE-specific gameplay glue
+- keep `Game_local.*` as a narrow integration layer
+- keep framework edits small and justified by application-level needs

@@ -35,6 +35,312 @@ This is the main home for FFE-specific runtime behavior. It currently owns:
 The intent is that gameplay-specific FFE logic stays in `FFE.cpp`, while Doom
 engine files only know about a small interface.
 
+## Current Ownership Boundary
+
+This is the current practical ownership split for FFE work.
+
+### Framework layer
+
+Primary location:
+
+- `neo/framework/`
+
+Responsibilities:
+
+- application startup and shutdown
+- session flow, map-change orchestration, and frame loop ownership
+- console, file system, cvar, command, and logging infrastructure
+- global launcher/runtime behavior that is not specific to FFE gameplay
+
+FFE-specific rule:
+
+- framework changes should stay minimal and only exist when FFE needs a true
+  engine-level hook
+- current examples include the opt-in minimal app path and launcher-adjacent
+  runtime handling
+- do not move gameplay behavior into `neo/framework/`
+
+### Game layer
+
+Primary location:
+
+- `neo/d3xp/`
+
+Responsibilities:
+
+- gameplay runtime and entity behavior
+- map population and per-frame gameplay simulation
+- player, weapon, AI, trigger, target, and mission logic
+- script events and game-facing CVars
+
+FFE-specific rule:
+
+- FFE gameplay ownership currently lives here
+- `FFE.cpp` is the preferred home for FFE-specific startup behavior, logging,
+  and small integration glue
+- `Game_local.*` should expose narrow hooks, not absorb large amounts of
+  FFE-specific logic
+
+### Tooling layer
+
+Primary locations:
+
+- repo-root `build.sh`
+- repo-root `run.sh`
+- `tools/`
+- `neo/tools/`
+
+Responsibilities:
+
+- build and launch workflow
+- asset-side helper scripts and exporters
+- compiler/editor helper utilities
+
+FFE-specific rule:
+
+- workflow improvements belong here when they reduce iteration friction
+- tools should support FFE content creation and debugging without becoming the
+  place where gameplay policy is implemented
+
+### Documentation layer
+
+Primary locations:
+
+- repo-root `README.md`
+- repo-root `ffe-roadmap.md`
+- `docs/docs/`
+
+Responsibilities:
+
+- project identity and developer entrypoint docs
+- roadmap, technical notes, and architecture decisions
+- engine structure references and integration notes
+
+FFE-specific rule:
+
+- branch-level decisions should be written down once they become recurring
+  guidance
+- low-level implementation notes belong in `docs/docs/`
+- roadmap and positioning belong at repo root
+
+## Current FFE Touch Points
+
+The active FFE integration surface is intentionally small.
+
+### `neo/d3xp/FFE.cpp`
+
+Owns:
+
+- startup state reset behavior
+- startup loadout behavior
+- startup encounter placement and trigger logic
+- cinematic gating for that encounter
+- FFE-prefixed startup diagnostics
+
+### `neo/d3xp/Game_local.*`
+
+Owns:
+
+- calling the FFE entry points from existing game lifecycle methods
+- storing the current minimal FFE runtime state on `idGameLocal`
+
+Should remain:
+
+- thin glue
+- not the long-term home for expanding FFE gameplay logic
+
+### `neo/d3xp/WorldSpawn.cpp`
+
+Owns:
+
+- script-facing event exposure for `ffeTriggerStartupEncounter`
+
+### `neo/d3xp/gamesys/SysCvar.h`
+
+Owns:
+
+- external declaration for FFE gameplay-facing CVars that the game/framework
+  need to see
+
+### `neo/framework/Common.cpp`
+
+Owns:
+
+- the global ESC handling branch for opt-in minimal app mode
+
+### `neo/framework/Common_load.cpp`
+
+Owns:
+
+- the map-change bypass used by opt-in minimal app mode
+
+### `neo/framework/common_frame.cpp`
+
+Owns:
+
+- the minimal app overlay draw path
+
+### `neo/sys/sdl/sdl_vkimp.cpp`
+
+Owns:
+
+- SDL window title branding for the current runtime window
+
+## Edit Policy For Near-Term FFE Work
+
+When adding or changing FFE behavior, use this order:
+
+1. Put FFE-specific gameplay behavior in `neo/d3xp/FFE.cpp` first.
+2. Touch `Game_local.*` only to add or maintain narrow lifecycle hooks.
+3. Touch `WorldSpawn.cpp` or script-facing game files only when a map/script
+   integration point is required.
+4. Touch `neo/framework/` only when the change is truly application-level.
+5. Update docs when the boundary or workflow changes in a way others will need
+   to follow.
+
+If a change requires broad edits across framework and game at the same time,
+that should be treated as a design decision and documented before it grows.
+
+## Phase 0 Audit Findings
+
+This audit captures the current `engine-cleanup` branch shortcuts and how they
+should be treated before Phase 1 work expands.
+
+### Retain as bounded debug scaffolding
+
+#### `ffe_minimalApp`
+
+Locations:
+
+- `neo/d3xp/FFE.cpp`
+- `neo/framework/Common.cpp`
+- `neo/framework/Common_load.cpp`
+- `neo/framework/common_frame.cpp`
+
+Disposition:
+
+- keep for now as an opt-in startup/debug path
+- do not allow it to become the default runtime path again
+- do not add gameplay logic that depends on minimal app mode existing
+
+Reason:
+
+- it is useful for fork bring-up and runtime sanity checks
+- it is explicitly a framework-level diagnostic hook, not gameplay architecture
+
+### Retain as intentional integration seam
+
+#### `ffeTriggerStartupEncounter`
+
+Location:
+
+- `neo/d3xp/WorldSpawn.cpp`
+
+Disposition:
+
+- keep as the current script-facing FFE event seam
+- revisit naming only when the startup encounter grows into broader mission
+  scripting behavior
+
+Reason:
+
+- this is currently the cleanest map/script entry point into FFE-owned runtime
+  behavior
+
+### Replace as prototype gameplay harness
+
+#### Doom-asset startup encounter
+
+Location:
+
+- `neo/d3xp/FFE.cpp`
+
+Current placeholders:
+
+- `weapon_machinegun`
+- `monster_zombie_fat`
+- forward spawn of a single test enemy in front of the player
+
+Disposition:
+
+- treat the entire current startup encounter as temporary prototype behavior
+- replace it before Phase 2 vertical-slice work becomes the main branch focus
+- do not build long-term combat systems around this harness
+
+Reason:
+
+- it exists to validate FFE lifecycle hooks and timing, not to represent final
+  combat architecture
+
+### Replace as temporary state storage
+
+#### FFE runtime state on `idGameLocal`
+
+Location:
+
+- `neo/d3xp/Game_local.h`
+
+Current fields:
+
+- `ffeMonsterSpawned`
+- `ffeWeaponGranted`
+- `ffeSawCinematic`
+- `ffeClearSinceTime`
+
+Disposition:
+
+- keep only as Phase 0 and early Phase 1 scaffolding
+- move into a dedicated FFE controller/state object during Phase 1
+
+Reason:
+
+- the fields are acceptable for a small bootstrap seam
+- they should not become the long-term storage model for expanding FFE systems
+
+### Keep as branding correction
+
+#### SDL window title rename
+
+Location:
+
+- `neo/sys/sdl/sdl_vkimp.cpp`
+
+Disposition:
+
+- keep
+
+Reason:
+
+- this is a small, low-risk branding fix
+- it does not create architectural coupling
+
+### Acknowledge but defer
+
+#### Legacy engine naming still visible at runtime
+
+Locations:
+
+- `neo/d3xp/Game_local.h` via `GAME_VERSION`
+- `build/RBDoom3BFG` binary name
+
+Current drift:
+
+- the runtime log still reports `gamename: baseDOOM-1`
+- the produced executable is still `RBDoom3BFG`
+
+Disposition:
+
+- document now
+- defer the actual rename until packaging/build-script/runtime naming can be
+  changed coherently
+
+Reason:
+
+- this is real branding drift, but it is not blocking the current stabilization
+  goals
+- changing it piecemeal now would risk needless churn across build and launch
+  paths
+
 ## Runtime Flow
 
 ### Automatic flow
@@ -178,6 +484,17 @@ The script:
 - preserves the game's exit code
 
 This makes the root log the primary runtime log for FFE debugging.
+
+### Startup diagnostics
+
+FFE startup diagnostics should stay concentrated in `neo/d3xp/FFE.cpp`.
+
+Current expectations:
+
+- FFE-specific startup logs stay prefixed with `FFE:`
+- startup logging explains state transitions, not just final actions
+- framework-level FFE logging should stay minimal unless the issue is truly
+  outside the gameplay hook
 
 ## Recommended Next Steps
 
