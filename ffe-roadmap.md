@@ -169,6 +169,25 @@ Current focus:
 
 Goal: stop scattering FFE logic through Doom-specific pathways.
 
+Checklist:
+
+- [x] Move the current FFE runtime state off `idGameLocal` fields and into a
+  dedicated FFE controller/state structure.
+- [x] Refactor `neo/d3xp/FFE.cpp` so startup state, diagnostics, and encounter
+  control read through that dedicated FFE-owned structure instead of ad hoc
+  globals and scattered fields.
+- [x] Reduce `Game_local.*` to narrow lifecycle hooks only: reset, frame tick,
+  and explicit trigger entry points.
+- [x] Keep `WorldSpawn.cpp` as the script-facing seam, but document whether the
+  current `ffeTriggerStartupEncounter` naming should stay or be generalized in
+  a later mission-scripting phase.
+- [x] Re-audit FFE-specific logging so startup and trigger diagnostics remain
+  localized to `FFE.cpp` and no new framework-level log drift is introduced.
+- [x] Document which current FFE gameplay assumptions are still borrowed from
+  Doom systems and therefore remain temporary.
+- [x] Verify that the game still builds, launches, and reproduces the current
+  FFE startup behavior after the refactor.
+
 Deliverables:
 
 - dedicated FFE state/controller structure replaces ad hoc startup fields
@@ -188,6 +207,14 @@ Exit criteria:
 - the game can still boot and run with the same behavior after refactoring
 - FFE runtime behavior is easier to trace than the current prototype
 - future gameplay work no longer requires arbitrary edits across the module
+
+Execution order:
+
+1. Extract state ownership.
+2. Rewire `FFE.cpp` around that ownership.
+3. Shrink `Game_local.*` back to thin hooks.
+4. Update docs to match the new seam.
+5. Rebuild and validate runtime behavior.
 
 ### Phase 2: First Playable Infantry Slice
 

@@ -40,6 +40,8 @@ Worldspawn class.  Each map has one worldspawn which handles global spawnargs.
 
 
 const idEventDef EV_PlayBackgroundMusic( "<playBackgroundMusic>", NULL );
+// Keep this seam startup-specific for now. Generalize naming only when FFE
+// grows a broader mission-scripting event surface.
 const idEventDef EV_FFE_TriggerStartupEncounter( "ffeTriggerStartupEncounter", NULL );
 
 /*

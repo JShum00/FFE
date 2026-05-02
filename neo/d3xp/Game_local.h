@@ -363,10 +363,6 @@ public:
 
 	idEntityPtr<idEntity>	portalSkyEnt;
 	bool					portalSkyActive;
-	bool					ffeMonsterSpawned;
-	bool					ffeWeaponGranted;
-	bool					ffeSawCinematic;
-	int						ffeClearSinceTime;
 
 	void					SetPortalSkyEnt( idEntity* ent );
 	bool					IsPortalSkyAcive();
@@ -451,8 +447,9 @@ public:
 	void					LocalMapRestart();
 	void					MapRestart();
 	static void				MapRestart_f( const idCmdArgs& args );
+	// Thin FFE integration seam: reset, per-frame tick, and explicit script trigger.
 	void					FFE_ResetStartupState();
-	void					FFE_RunStartupFrame( idPlayer* player );
+	void					FFE_RunStartupFrame();
 	void					FFE_TriggerStartupEncounter();
 
 	idMapFile* 				GetLevelMap();

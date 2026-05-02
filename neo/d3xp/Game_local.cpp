@@ -319,10 +319,6 @@ void idGameLocal::Init()
 	Printf( "--------- Initializing Game ----------\n" );
 	Printf( "gamename: %s\n", GAME_VERSION );
 	Printf( "gamedate: %s\n", ID__DATE__ );
-	if( ffe_minimalApp.GetBool() )
-	{
-		common->Printf( "FFE: Minimal app mode enabled\n" );
-	}
 
 	// register game specific decl types
 	declManager->RegisterDeclType( "model",				DECL_MODELDEF,		idDeclAllocator<idDeclModelDef> );
@@ -2677,9 +2673,7 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 	SyncPlayersWithLobbyUsers( false );
 	ServerSendNetworkSyncCvars();
 
-	player = GetLocalPlayer();
-
-	FFE_RunStartupFrame( player );
+	FFE_RunStartupFrame();
 
 	// Single-player debug freeze: do not advance world time, but still let the
 	// local player consume input and think so camera/movement debugging remains

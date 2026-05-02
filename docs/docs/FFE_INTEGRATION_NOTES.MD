@@ -12,6 +12,8 @@ where to extend it cleanly.
 
 This is the main home for FFE-specific runtime behavior. It currently owns:
 
+- FFE controller/state ownership
+- controller-owned startup diagnostics and encounter control
 - startup state reset
 - startup weapon grant
 - startup monster spawn
@@ -23,10 +25,10 @@ This is the main home for FFE-specific runtime behavior. It currently owns:
 - `neo/d3xp/Game_local.cpp`
   - calls `FFE_ResetStartupState()` during `Clear()`
   - calls `FFE_ResetStartupState()` during `MapPopulate()`
-  - calls `FFE_RunStartupFrame( player )` from `RunFrame()`
+  - calls `FFE_RunStartupFrame()` from `RunFrame()`
 - `neo/d3xp/Game_local.h`
   - declares FFE runtime entry points
-  - stores minimal FFE runtime state on `idGameLocal`
+  - no longer stores FFE-owned startup state directly
 - `neo/d3xp/WorldSpawn.cpp`
   - exposes a script-callable event: `ffeTriggerStartupEncounter`
 - `neo/CMakeLists.txt`
@@ -131,6 +133,8 @@ The active FFE integration surface is intentionally small.
 
 Owns:
 
+- the dedicated FFE runtime controller/state structure
+- controller-local diagnostics, logging, and cinematic-gate checks
 - startup state reset behavior
 - startup loadout behavior
 - startup encounter placement and trigger logic
@@ -141,8 +145,7 @@ Owns:
 
 Owns:
 
-- calling the FFE entry points from existing game lifecycle methods
-- storing the current minimal FFE runtime state on `idGameLocal`
+- calling the FFE entry points from existing game lifecycle methods only
 
 Should remain:
 
@@ -154,6 +157,13 @@ Should remain:
 Owns:
 
 - script-facing event exposure for `ffeTriggerStartupEncounter`
+
+Naming decision:
+
+- keep `ffeTriggerStartupEncounter` as-is during Phase 1
+- treat it as an intentionally narrow seam for the current startup encounter
+- reconsider a broader name only when FFE gains a real mission-scripting event
+  surface beyond startup bootstrap behavior
 
 ### `neo/d3xp/gamesys/SysCvar.h`
 
@@ -239,13 +249,15 @@ Location:
 Disposition:
 
 - keep as the current script-facing FFE event seam
+- keep the current startup-specific name through Phase 1
 - revisit naming only when the startup encounter grows into broader mission
-  scripting behavior
+  scripting behavior and a more general event vocabulary is justified
 
 Reason:
 
 - this is currently the cleanest map/script entry point into FFE-owned runtime
   behavior
+- renaming it now would add churn without improving the current seam
 
 ### Replace as prototype gameplay harness
 
@@ -276,26 +288,15 @@ Reason:
 
 #### FFE runtime state on `idGameLocal`
 
-Location:
-
-- `neo/d3xp/Game_local.h`
-
-Current fields:
-
-- `ffeMonsterSpawned`
-- `ffeWeaponGranted`
-- `ffeSawCinematic`
-- `ffeClearSinceTime`
-
 Disposition:
 
-- keep only as Phase 0 and early Phase 1 scaffolding
-- move into a dedicated FFE controller/state object during Phase 1
+- completed in early Phase 1 by moving the startup state into an FFE-owned
+  controller in `neo/d3xp/FFE.cpp`
 
 Reason:
 
-- the fields are acceptable for a small bootstrap seam
-- they should not become the long-term storage model for expanding FFE systems
+- FFE-owned runtime state now sits with FFE-owned behavior instead of inflating
+  `idGameLocal`
 
 ### Keep as branding correction
 
@@ -348,8 +349,8 @@ Reason:
 The current automatic startup path is:
 
 1. `idGameLocal::RunFrame()`
-2. `GetLocalPlayer()`
-3. `FFE_RunStartupFrame( player )`
+2. `FFE_RunStartupFrame()`
+3. FFE resolves the local player internally
 4. FFE checks whether cinematic/camera gating is still active
 5. FFE grants the machinegun if needed
 6. FFE waits until the player is truly in gameplay
@@ -369,6 +370,129 @@ This gives two ways to drive the same encounter:
 
 - automatically from the frame loop
 - explicitly from map script timing
+
+## Borrowed Doom Assumptions Still In Use
+
+The current FFE startup harness still relies on several Doom-era gameplay
+assumptions. These are temporary and should not be treated as long-term FFE
+architecture.
+
+### Doom weapon and ammo definitions
+
+Current dependency:
+
+- `weapon_machinegun`
+- `ammo_clip`
+- `SlotForWeapon()` / `WeaponAvailable()` behavior from the existing player and
+  inventory stack
+
+Why it is temporary:
+
+- this is Doom inventory and weapon-slot behavior, not an FFE-designed infantry
+  weapon system
+- it is only being used to validate startup loadout control and script/runtime
+  timing
+
+Replacement direction:
+
+- swap this out once FFE has its own weapon/loadout rules and player-facing
+  combat pacing
+
+### Doom monster entity usage
+
+Current dependency:
+
+- `monster_zombie_fat`
+- `MASK_MONSTERSOLID`
+- monster-sized spawn bounds and trace assumptions
+
+Why it is temporary:
+
+- this is a Doom monster class being used as a spawn/encounter test target
+- it does not represent human combat behavior, squad logic, or FFE encounter
+  pacing
+
+Replacement direction:
+
+- replace with a human combat test actor before Phase 2 becomes the active
+  production focus
+
+### Doom cinematic and camera gating semantics
+
+Current dependency:
+
+- `inCinematic`
+- `GetPrivateCameraView()`
+- `GetCamera()`
+- hidden-player checks
+
+Why it is temporary:
+
+- these are existing Doom rules for when the player is considered under
+  cinematic control
+- FFE currently reuses them to avoid spawning into intro-map transitions
+
+Replacement direction:
+
+- keep the seam for now, but revisit when FFE mission flow and authored
+  encounter timing become more explicit
+
+### Doom worldspawn weapon gate behavior
+
+Current dependency:
+
+- `worldspawn.no_Weapons`
+- `EV_Player_EnableWeapon`
+
+Why it is temporary:
+
+- this is inherited map/world policy from Doom startup behavior
+- FFE currently overrides it only to make the startup harness reliable
+
+Replacement direction:
+
+- replace with explicit FFE mission/start-state rules rather than clearing a
+  Doom-era world flag as part of normal gameplay flow
+
+### Doom player-centric encounter bootstrap
+
+Current dependency:
+
+- local-player lookup from `GetLocalPlayer()`
+- direct use of `player->viewAngles`
+- trace placement in front of the player as the trigger basis
+
+Why it is temporary:
+
+- this is a bootstrap encounter heuristic, not a general mission or squad
+  encounter system
+- it assumes one immediate player-facing spawn pattern rather than authored
+  objective logic
+
+Replacement direction:
+
+- move toward explicit mission scripting and authored encounter definitions once
+  the vertical-slice combat space exists
+
+### Doom game-code module surface
+
+Current dependency:
+
+- all FFE runtime behavior still lives inside the inherited `neo/d3xp`
+  game-code module
+- script-facing entry points still use Doom’s event and thread system
+
+Why it is temporary:
+
+- the module surface is acceptable for the current fork stage, but it still
+  inherits Doom-centric gameplay organization
+- FFE is restructuring within that module before attempting broader gameplay
+  replacement
+
+Replacement direction:
+
+- continue carving FFE-owned gameplay seams inside `neo/d3xp` during Phase 1,
+  then replace specific borrowed systems as vertical-slice needs become clear
 
 ## Important Findings
 
@@ -495,6 +619,13 @@ Current expectations:
 - startup logging explains state transitions, not just final actions
 - framework-level FFE logging should stay minimal unless the issue is truly
   outside the gameplay hook
+
+Current audit result:
+
+- startup and trigger diagnostics are localized to `neo/d3xp/FFE.cpp`
+- `Game_local.*` no longer emits FFE-prefixed startup diagnostics
+- remaining framework-level `FFE:` logs are limited to opt-in minimal-app
+  lifecycle messages, which are application-level rather than gameplay-level
 
 ## Recommended Next Steps
 
