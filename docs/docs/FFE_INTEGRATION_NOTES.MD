@@ -609,6 +609,37 @@ The script:
 
 This makes the root log the primary runtime log for FFE debugging.
 
+## Phase 1 Verification
+
+Phase 1 seam refactors were verified with:
+
+- `./build.sh`
+- `timeout 20s ./run.sh` for normal launcher/bootstrap validation
+- `timeout 30s ./build/RBDoom3BFG +devmap game/mars_city1` for direct gameplay
+  validation of the startup harness
+
+Observed result:
+
+- the build completed successfully
+- the standard launcher still booted cleanly through engine and game
+  initialization
+- the direct `devmap` launch reproduced the current FFE startup behavior in
+  `log.log`
+
+Observed FFE startup sequence:
+
+- `FFE: No cinematic gate seen; waiting 2000 ms after startup before auto encounter`
+- `FFE: Cleared no_Weapons gate for startup loadout`
+- `FFE: Startup weapon grant ...`
+- `FFE: Cinematic gate cleared; waiting 1000 ms before auto encounter`
+- `FFE: Startup encounter ready for automatic trigger ...`
+- `FFE: Spawned test monster ... source=auto`
+
+Conclusion:
+
+- the Phase 1 refactor preserved the current startup harness behavior while
+  moving ownership into the FFE controller seam
+
 ### Startup diagnostics
 
 FFE startup diagnostics should stay concentrated in `neo/d3xp/FFE.cpp`.

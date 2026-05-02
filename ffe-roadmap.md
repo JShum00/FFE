@@ -221,6 +221,105 @@ Execution order:
 Goal: prove the project is becoming a combat game rather than a fork cleanup
 exercise.
 
+Checklist:
+
+- [x] Define the exact Phase 2 slice contract in one short design note:
+  starting location, player goal, failure condition, and done condition.
+- [ ] Choose one target gameplay map strategy for the slice and document it:
+  reuse an existing Doom map as a temporary harness, create a graybox test map,
+  or branch an existing map into an FFE-specific combat test space.
+- [ ] Define the minimum player feature set for the slice:
+  move, aim, fire, reload, take damage, complete objective, restart.
+- [ ] Define the minimum enemy feature set for the slice:
+  detect player, move, attack, take damage, die, and pressure the objective.
+- [ ] Replace the current startup monster harness with a deliberately authored
+  combat bootstrap for the slice, even if it is still temporary.
+- [ ] Decide what stays placeholder for Phase 2 versus what must be custom
+  content before the slice is considered valid.
+
+Asset and pipeline checklist:
+
+- [ ] Inventory the currently usable asset path for custom content:
+  model format, material setup, animation path, collision/physics setup, and
+  script/entityDef hookup.
+- [ ] Audit the current Blender tooling under `tools/blender/` and document
+  what it actually supports today versus what is missing for FFE needs.
+- [ ] Choose the Phase 2 source-of-truth DCC workflow:
+  exact Blender version, export process, naming conventions, and directory
+  layout for working files.
+- [ ] Create a documented first-pass asset pipeline note covering:
+  mesh authoring, export, file placement, material declaration, entityDef
+  hookup, and in-engine validation.
+- [ ] Create one pipeline test asset that is not gameplay-critical:
+  a simple prop or marker model imported from Blender all the way into the
+  engine.
+- [ ] Create one gameplay-relevant custom asset path proof:
+  either a custom weapon view/world model, a custom enemy stand-in, or a
+  custom objective prop that appears in-game.
+- [ ] Document how collision, origin placement, scale, and orientation are
+  validated for imported assets.
+- [ ] Record how textures and materials are authored and referenced for the
+  slice, including what remains borrowed from Doom materials.
+- [ ] Decide whether Phase 2 animations will use inherited Doom animations,
+  retargeted assets, or static/limited placeholder motion, and document that
+  decision explicitly.
+
+Gameplay implementation checklist:
+
+- [ ] Define the first slice weapon behavior contract:
+  damage model, fire cadence, reload behavior, ammo presentation, and feedback
+  standard.
+- [ ] Decide whether the Phase 2 primary firearm is a temporary reuse of Doom
+  weapon internals or the start of an FFE-specific weapon path.
+- [ ] Implement the minimum player handling changes needed for grounded
+  infantry pacing and document what still remains Doom-like.
+- [ ] Define one temporary human-enemy stand-in path:
+  reskinned Doom actor, heavily modified existing actor, or first custom human
+  actor prototype.
+- [ ] Implement objective flow for one complete encounter:
+  enter space, receive objective, fight through pressure, satisfy objective,
+  and confirm completion.
+- [ ] Add only the minimum HUD or debug feedback required to understand ammo,
+  damage state, and objective progress.
+- [ ] Ensure the slice can be re-entered repeatedly for testing without
+  cinematic-only setup or manual editor-only intervention.
+
+Data, defs, and scripting checklist:
+
+- [ ] Define the Phase 2 working directories and naming scheme for new FFE
+  defs, materials, scripts, and generated content.
+- [ ] Create or identify the entityDef path for the slice player-facing asset
+  work: weapon, objective prop, or enemy stand-in.
+- [ ] Create or identify the script entry point for the slice objective flow.
+- [ ] Keep the script-facing seam narrow and document any new worldspawn or
+  trigger event hooks added for the slice.
+- [ ] Record which Doom defs/scripts are still being borrowed so they can be
+  targeted for later replacement instead of forgotten.
+
+Map and encounter checklist:
+
+- [ ] Build or select one contained combat space suitable for fast iteration.
+- [ ] Place spawn, encounter, cover, and objective beats intentionally rather
+  than relying on the current forward-spawn startup heuristic.
+- [ ] Define where the player starts, where the enemy starts, and what event
+  causes combat to begin.
+- [ ] Ensure the encounter can succeed and fail in a way that is visible in
+  logs and on screen.
+- [ ] Add at least one repeatable test path for rapid verification:
+  direct launch, devmap, or command-driven encounter start.
+
+Validation checklist:
+
+- [ ] Verify the slice builds from the documented repo workflow.
+- [ ] Verify the slice launches directly into its test path without relying on
+  the old startup monster harness.
+- [ ] Verify at least one custom or pipeline-validated asset survives the full
+  DCC-to-engine path.
+- [ ] Verify logs clearly show objective start, combat start, and completion or
+  failure.
+- [ ] Write a short regression checklist for replaying the slice after major
+  code or content changes.
+
 Deliverables:
 
 - one test map or graybox combat space
@@ -243,6 +342,15 @@ Exit criteria:
 - a player can launch the build, enter a map, fight human enemies, complete an
   objective, and exit without relying on Doom-style flow
 - the slice demonstrates the intended pacing better than any design document
+
+Execution order:
+
+1. Lock the slice contract and choose the map/content strategy.
+2. Prove the Blender-to-engine pipeline with one non-critical asset.
+3. Stand up the first gameplay-relevant custom asset or stand-in path.
+4. Replace the startup harness with an authored encounter bootstrap.
+5. Implement objective flow, feedback, and repeatable launch/testing hooks.
+6. Validate the slice end to end and capture the regression path.
 
 ### Phase 3: Combat Architecture
 
