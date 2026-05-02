@@ -27,7 +27,7 @@ FFE is built around:
 - Strong atmosphere through lighting and audio  
 - Controlled, scripted battlefield chaos  
 
-This is not a DOOM port. It is a foundation for a new game.
+This is not a DOOM port, it will be the foundation for a new game.
 
 ---
 
@@ -43,11 +43,11 @@ This is not a DOOM port. It is a foundation for a new game.
 ---
 
 ## 📁 Project Structure
-/engine Core engine code (id Tech 4 fork)
-/game Game-specific logic and systems
-/assets Game content (non-GPL)
-/docs Design documents and technical notes
-/tools Build tools and utilities
+- /engine Core engine code (id Tech 4 fork)
+- /game Game-specific logic and systems
+- /assets Game content (non-GPL)
+- /docs Design documents and technical notes
+- /tools Build tools and utilities
 ---
 
 ## ⚙️ Building the Engine
