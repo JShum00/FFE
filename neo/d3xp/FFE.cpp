@@ -15,6 +15,13 @@ here, and scripts can trigger the same encounter through worldspawn.
 
 #include "Game_local.h"
 
+idCVar ffe_minimalApp(
+	"ffe_minimalApp",
+	"1",
+	CVAR_BOOL,
+	"Run minimal application mode"
+);
+
 namespace
 {
 

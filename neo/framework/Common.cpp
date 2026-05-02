@@ -100,6 +100,7 @@ idCVar com_pause( "com_pause", "0", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "set
 idCVar com_activeApp( "com_activeApp", "1", CVAR_BOOL | CVAR_SYSTEM | CVAR_NOCHEAT, "this is set to 0 if running in background" );
 
 extern idCVar g_demoMode;
+extern idCVar ffe_minimalApp;
 
 idCVar com_engineHz( "com_engineHz", "60", CVAR_FLOAT | CVAR_ARCHIVE, "Frames per second the engine runs at", 10.0f, 1024.0f );
 float com_engineHz_latched = 60.0f; // Latched version of cvar, updated between map loads
@@ -1790,6 +1791,16 @@ idCommonLocal::ProcessEvent
 */
 bool idCommonLocal::ProcessEvent( const sysEvent_t* event )
 {
+	if( ffe_minimalApp.GetBool() )
+	{
+		if( event->evType == SE_KEY && event->evValue2 == 1 && event->evValue == K_ESCAPE )
+		{
+			common->Printf( "FFE: ESC pressed, quitting minimal app\n" );
+			Quit();
+			return true;
+		}
+	}
+
 	// hitting escape anywhere brings up the menu
 	if( game && game->IsInGame() )
 	{
