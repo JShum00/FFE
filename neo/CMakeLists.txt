@@ -687,6 +687,7 @@ set(GAMED3XP_SOURCES
 	d3xp/Camera.cpp
 	d3xp/Entity.cpp
 	d3xp/EnvironmentProbe.cpp
+	d3xp/FFE.cpp
 	d3xp/Fx.cpp
 	d3xp/GameEdit.cpp
 	d3xp/Game_local.cpp
@@ -1476,4 +1477,3 @@ target_link_libraries(${APP_NAME} ShaderMakeBlob ${MASKED_OCCLUSION_LIBRARY} ${I
 add_subdirectory(shaders)
 add_dependencies(Shaders ShaderMake)
 add_dependencies(${APP_NAME} Shaders ${MASKED_OCCLUSION_LIBRARY} ${ISPC_TEXCOMP_LIBRARY})
-

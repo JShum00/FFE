@@ -40,6 +40,7 @@ Worldspawn class.  Each map has one worldspawn which handles global spawnargs.
 
 
 const idEventDef EV_PlayBackgroundMusic( "<playBackgroundMusic>", NULL );
+const idEventDef EV_FFE_TriggerStartupEncounter( "ffeTriggerStartupEncounter", NULL );
 
 /*
 ================
@@ -52,6 +53,7 @@ CLASS_DECLARATION( idEntity, idWorldspawn )
 EVENT( EV_Remove,				idWorldspawn::Event_Remove )
 EVENT( EV_SafeRemove,			idWorldspawn::Event_Remove )
 EVENT( EV_PlayBackgroundMusic,	idWorldspawn::Event_PlayBackgroundMusic )
+EVENT( EV_FFE_TriggerStartupEncounter,	idWorldspawn::Event_FFE_TriggerStartupEncounter )
 END_CLASS
 
 /*
@@ -163,6 +165,11 @@ idWorldspawn::Event_Remove
 void idWorldspawn::Event_Remove()
 {
 	gameLocal.Error( "Tried to remove world" );
+}
+
+void idWorldspawn::Event_FFE_TriggerStartupEncounter()
+{
+	gameLocal.FFE_TriggerStartupEncounter();
 }
 
 // RB begin

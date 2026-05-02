@@ -271,6 +271,7 @@ void idGameLocal::Clear()
 	newInfo.Clear();
 	lastGUIEnt = NULL;
 	lastGUI = 0;
+	FFE_ResetStartupState();
 
 	eventQueue.Init();
 	savedEventQueue.Init();
@@ -1228,6 +1229,7 @@ idGameLocal::MapPopulate
 */
 void idGameLocal::MapPopulate()
 {
+	FFE_ResetStartupState();
 
 	if( common->IsMultiplayer() )
 	{
@@ -2630,6 +2632,8 @@ idGameLocal::RunFrame
 */
 void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 {
+	// Mark the whole game-frame update for the profiler. This function is the
+	// main server-side simulation tick and is also used by single-player.
 	SCOPED_PROFILE_EVENT( "RunFrame" );
 
 	idEntity* 	ent;
@@ -2640,6 +2644,8 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 	idPlayer*	player;
 	const renderView_t* view;
 
+	// Optional one-frame PIX/GPU trace capture. The cvar is cleared at the end
+	// of the frame so enabling it records exactly one RunFrame pass.
 	if( g_recordTrace.GetBool() )
 	{
 		bool result = BeginTraceRecording( "e:\\gametrace.pix2" );
@@ -2656,16 +2662,24 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 	}
 #endif
 
+	// Without a render world there is no active map/game world to update.
 	if( gameRenderWorld == NULL )
 	{
 		return;
 	}
 
+	// Keep player slots aligned with lobby users, then push any replicated cvar
+	// changes before entities simulate and snapshots are built.
 	SyncPlayersWithLobbyUsers( false );
 	ServerSendNetworkSyncCvars();
 
 	player = GetLocalPlayer();
 
+	FFE_RunStartupFrame( player );
+
+	// Single-player debug freeze: do not advance world time, but still let the
+	// local player consume input and think so camera/movement debugging remains
+	// interactive while everything else is paused.
 	if( !common->IsMultiplayer() && g_stopTime.GetBool() )
 	{
 		// clear any debug lines from a previous frame
@@ -2681,6 +2695,9 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 	}
 	else
 	{
+		// Normal simulation path. This is usually a single iteration, but while
+		// skipping cinematics it can loop through frames until the cinematic
+		// state has finished or a safety limit is hit.
 		do
 		{
 			// update the game time
@@ -2690,12 +2707,16 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			fast.realClientTime = fast.time;
 			SetServerGameTimeMs( fast.time );
 
+			// Derive the slow-time scale for this frame, then advance the slow
+			// time group relative to the fast canonical game clock.
 			ComputeSlowScale();
 
 			slow.previousTime = slow.time;
 			slow.time += idMath::Ftoi( ( fast.time - fast.previousTime ) * slowmoScale );
 			slow.realClientTime = slow.time;
 
+			// Start the frame on the normal/slow time group. Time-group 2 is
+			// serviced explicitly later for entities that must stay fast.
 			SelectTimeGroup( false );
 
 #ifdef GAME_DLL
@@ -2710,6 +2731,8 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			// are influenced by the player's actions
 			random.RandomInt();
 
+			// Feed the player's current render view into the render world before
+			// GUI/video updates so time-dependent materials use the correct view.
 			if( player )
 			{
 				// update the renderview so that any gui videos play from the right frame
@@ -2735,9 +2758,13 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			// update our gravity vector if needed.
 			UpdateGravity();
 
+			// Build visibility for all players before entities think. Many entity
+			// systems use the merged PVS for dormant checks and update decisions.
 			// create a merged pvs for all players
 			SetupPlayerPVS();
 
+			// Keep activeEntities in a deterministic/priority order before
+			// running Think on the list.
 			// sort the active entity list
 			SortActiveEntityList();
 
@@ -2747,11 +2774,16 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			// let entities think
 			if( g_timeentities.GetFloat() )
 			{
+				// Profiling path: time each entity individually and print any
+				// Think that exceeds the cvar threshold.
 				num = 0;
 				for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() )
 				{
 					if( g_cinematic.GetBool() && inCinematic && !ent->cinematic )
 					{
+						// Non-cinematic entities do not run gameplay logic
+						// during cinematics, but their physics clocks are kept
+						// current so they do not accumulate a time jump.
 						ent->GetPhysics()->UpdateTime( time );
 						continue;
 					}
@@ -2771,11 +2803,15 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			{
 				if( inCinematic )
 				{
+					// Cinematic path: only entities marked as cinematic are
+					// allowed to run while g_cinematic filtering is enabled.
 					num = 0;
 					for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() )
 					{
 						if( g_cinematic.GetBool() && !ent->cinematic )
 						{
+							// Keep skipped entities synchronized with the
+							// current frame time without executing Think.
 							ent->GetPhysics()->UpdateTime( time );
 							continue;
 						}
@@ -2785,6 +2821,8 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 				}
 				else
 				{
+					// Normal path: first run entities assigned to TIME_GROUP1.
+					// Fast-time entities are handled by RunTimeGroup2 below.
 					num = 0;
 					for( ent = activeEntities.Next(); ent != NULL; ent = ent->activeNode.Next() )
 					{
@@ -2798,8 +2836,12 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 				}
 			}
 
+			// Run entities that live on the fast time group, such as player and
+			// weapon-critical objects during slow-motion gameplay.
 			RunTimeGroup2( cmdMgr );
 // jmarshall
+			// Run logic shared across entities after both time groups have had
+			// their normal Think pass.
 			RunSharedThink();
 // jmarshall end
 			// Run catch-up for any client projectiles.
@@ -2815,6 +2857,9 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			// remove any entities that have stopped thinking
 			if( numEntitiesToDeactivate )
 			{
+				// Entities clear their think flags during Think/Event handling.
+				// Defer unlinking until after iteration so activeEntities is not
+				// modified while it is being walked above.
 				idEntity* next_ent;
 				int c = 0;
 				for( ent = activeEntities.Next(); ent != NULL; ent = next_ent )
@@ -2835,9 +2880,12 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			timer_events.Start();
 
 			// service any pending events
+			// Normal events run against the current selected time group.
 			idEvent::ServiceEvents();
 
 			// service pending fast events
+			// Fast events must execute with TIME_GROUP2 selected, then restore
+			// the normal group for the rest of the frame.
 			SelectTimeGroup( true );
 			idEvent::ServiceFastEvents();
 			SelectTimeGroup( false );
@@ -2850,6 +2898,8 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			// do multiplayer related stuff
 			if( common->IsMultiplayer() )
 			{
+				// Update match state, scoreboards, respawns, warmup/countdown,
+				// and other multiplayer systems after entity/event simulation.
 				mpGame.Run();
 			}
 
@@ -2861,11 +2911,15 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 						timer_think.Milliseconds(), timer_events.Milliseconds(), num );
 			}
 
+			// Populate the frame result consumed by the session layer. This
+			// includes session commands and controller vibration.
 			BuildReturnValue( ret );
 
 			// see if a target_sessionCommand has forced a changelevel
 			if( sessionCommand.Length() )
 			{
+				// Stop any cinematic-skip catch-up loop immediately when gameplay
+				// has requested a map/session transition.
 				strncpy( ret.sessionCommand, sessionCommand, sizeof( ret.sessionCommand ) );
 				break;
 			}
@@ -2873,6 +2927,8 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 			// make sure we don't loop forever when skipping a cinematic
 			if( skipCinematic && ( time > cinematicMaxSkipTime ) )
 			{
+				// A looping or stuck cinematic could otherwise keep this do/while
+				// advancing frames indefinitely in one outer engine frame.
 				Warning( "Exceeded maximum cinematic skip length.  Cinematic may be looping infinitely." );
 				skipCinematic = false;
 				break;
@@ -2880,12 +2936,17 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 		}
 		while( ( inCinematic || ( time < cinematicStopTime ) ) && skipCinematic );
 
+		// At this point the game has either advanced one normal frame or, when
+		// skipCinematic was active, advanced enough frames to leave/finish the
+		// cinematic path.
 		// i think this loop always play all that content until we skip the cinematic,
 		// when then we keep until the end of the function
 	}
 
 	if( skipCinematic )
 	{
+		// Cinematic skipping muted/shut down sounds while fast-forwarding. Restore
+		// audio state and restart level music once the skip is complete.
 		soundSystem->SetMute( false );
 		skipCinematic = false;
 
@@ -2894,11 +2955,14 @@ void idGameLocal::RunFrame( idUserCmdMgr& cmdMgr, gameReturn_t& ret )
 	}
 
 	// show any debug info for this frame
+	// These run after simulation so debug overlays reflect final frame state.
 	RunDebugInfo();
 	D_DrawDebugLines();
 
 	if( g_recordTrace.GetBool() )
 	{
+		// Close the one-frame trace and reset the cvar so the next frame does
+		// not start another capture unless explicitly requested.
 		EndTraceRecording();
 		g_recordTrace.SetBool( false );
 	}
@@ -6135,5 +6199,3 @@ bool idGameLocal::SimulateProjectiles()
 
 	return moreProjectiles;
 }
-
-
