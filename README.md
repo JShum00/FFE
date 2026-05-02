@@ -76,24 +76,46 @@ mv dxc ~/.local/bin/
 
 ---
 
-#### 3. Generate Build Files
+#### 3. Build
+Preferred repo-root workflow:
+```bash
+./build.sh
 ```
-cd neo/
+
+This script:
+
+- reuses the existing `build/` directory for incremental builds
+- runs `neo/cmake-linux-release.sh` automatically when CMake has not been configured yet
+- compiles the engine from `build/`
+
+Manual equivalent:
+```bash
+cd neo
 ./cmake-linux-release.sh
-```
----
-
-#### 4. Compile
-```
 cd ../build
-make -j$(nproc)
+make -j"$(nproc)"
 ```
 ---
 
-#### 5. Run
-```./RBDoom3BFG```
+#### 4. Run
+Preferred repo-root workflow:
+```bash
+./run.sh
+```
 
-(Note: binary renaming will be done later in development)
+This launcher:
+
+- starts the binary from `build/`
+- mirrors stdout/stderr into `log.log`
+- keeps the repo-root log as the primary runtime debug log
+
+Manual equivalent:
+```bash
+cd build
+./RBDoom3BFG
+```
+
+Note: the runtime window title is already `Frontline Forge Engine`, but the binary name is still `RBDoom3BFG`.
 
 ---
 

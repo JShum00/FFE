@@ -127,6 +127,19 @@ Near-term boundary target:
 
 Goal: establish a reliable working baseline before broad replacement work.
 
+Checklist:
+
+- [x] Make special fork-debug startup behavior opt-in so normal engine startup
+  remains the default branch workflow.
+- [x] Verify the primary build and launch flow from the current repository docs
+  and correct any drift.
+- [ ] Consolidate current FFE startup diagnostics so logs are useful without
+  frame-spam or scattered one-off prints.
+- [ ] Document the current FFE integration points and code ownership boundary
+  between framework, game, tools, and docs.
+- [ ] Audit the existing engine-cleanup changes for temporary hacks that should
+  be either documented, renamed, or removed before deeper refactors.
+
 Deliverables:
 
 - project identity finalized as FFE in docs and developer-facing references
@@ -146,6 +159,11 @@ Notes:
 
 - this phase is about baseline confidence, not feature ambition
 - any recurring startup/debug pain should be fixed here
+
+Current focus:
+
+- The first stabilization task on this branch is making minimal-app startup
+  behavior explicitly opt-in rather than the default runtime path.
 
 ### Phase 1: Carve Out The Gameplay Layer
 

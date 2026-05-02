@@ -416,7 +416,7 @@ void idCommonLocal::ExecuteMapChange()
 
 	if( ffe_minimalApp.GetBool() )
 	{
-		common->Printf( "FFE: Skipping game initialization\n" );
+		common->Printf( "FFE: Minimal app mode active, skipping map and game initialization\n" );
 		UnloadMap();
 		insideExecuteMapChange = false;
 		session->QuitMatchToTitle();

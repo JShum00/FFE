@@ -271,14 +271,6 @@ void idCommonLocal::Draw()
 
 	if( ffe_minimalApp.GetBool() )
 	{
-		static int lastMinimalAppFrameLogTime = 0;
-		const int now = Sys_Milliseconds();
-		if( now - lastMinimalAppFrameLogTime >= 1000 )
-		{
-			common->Printf( "FFE: Frame running\n" );
-			lastMinimalAppFrameLogTime = now;
-		}
-
 		renderSystem->SetColor4( 0, 0, 0, 1 );
 		renderSystem->DrawStretchPic( 0, 0, renderSystem->GetVirtualWidth(), renderSystem->GetVirtualHeight(), 0, 0, 1, 1, whiteMaterial );
 		renderSystem->DrawBigStringExt( 40, 60, "Frontline Forge Engine", colorWhite, true );

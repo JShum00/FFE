@@ -17,9 +17,9 @@ here, and scripts can trigger the same encounter through worldspawn.
 
 idCVar ffe_minimalApp(
 	"ffe_minimalApp",
-	"1",
+	"0",
 	CVAR_BOOL,
-	"Run minimal application mode"
+	"Run the engine in an opt-in minimal application mode for fork startup debugging"
 );
 
 namespace
